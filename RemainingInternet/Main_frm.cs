@@ -29,15 +29,27 @@ namespace RemainingInternet
         {
             try
             {
-                string html = await client.GetStringAsync(url); // دریافت محتوای HTML صفحه
+                // بررسی اینکه آیا کاربر سرویس همای جهان‌نما دارد یا خیر
+                HttpResponseMessage response = await client.GetAsync("https://qom.jahan-nama.com/user/signin");
+                string finalUrl = response.RequestMessage.RequestUri.ToString(); // آدرس نهایی پس از ریدایرکت
 
-                // استفاده از Regex برای پیدا کردن تگ HTML دلخواه
+                if (finalUrl != "https://qom.jahan-nama.com/")
+                {
+                    MessageBox.Show("شما مشترک اینترنت همای جهان‌نما نیستید. برنامه بسته می‌شود.", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Application.Exit(); // خروج از نرم‌افزار
+                    return null; // خروجی نامعتبر برای متوقف شدن ادامه‌ی پردازش
+                }
+
+                // دریافت محتوای HTML صفحه اصلی
+                string html = await client.GetStringAsync(url);
+
+                // استفاده از Regex برای پیدا کردن مقدار ترافیک سرویس
                 var regex = new Regex(@"<label class=""right"">ترافیک سرویس :<\/label>\s*<label class=""left"">(.*?)<\/label>", RegexOptions.Singleline);
+                var match = regex.Match(html);
 
-                var match = regex.Match(html); // تطبیق داده‌ها با الگوی Regex
                 if (match.Success)
                 {
-                    string trafficInfo = match.Groups[1].Value.Trim(); // استخراج داده
+                    string trafficInfo = match.Groups[1].Value.Trim();
                     return trafficInfo;
                 }
                 else
@@ -50,6 +62,7 @@ namespace RemainingInternet
                 return "خطا در ارسال درخواست: " + ex.Message;
             }
         }
+
 
         private async void Main_frm_Load(object sender, EventArgs e)
         {
